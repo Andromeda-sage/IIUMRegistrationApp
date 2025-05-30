@@ -1,0 +1,13 @@
+com\mycompany\iiumregistrationapp\Person.class
+com\mycompany\iiumregistrationapp\Section.class
+com\mycompany\iiumregistrationapp\Student.class
+com\mycompany\iiumregistrationapp\Assignation.class
+com\mycompany\iiumregistrationapp\Lecturer.class
+com\mycompany\iiumregistrationapp\Manageable.class
+com\mycompany\iiumregistrationapp\App$UserRole.class
+module-info.class
+com\mycompany\iiumregistrationapp\App.class
+com\mycompany\iiumregistrationapp\Course.class
+com\mycompany\iiumregistrationapp\Registration.class
+com\mycompany\iiumregistrationapp\SystemInfo.class
+com\mycompany\iiumregistrationapp\Main.class
