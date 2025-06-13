@@ -38,21 +38,59 @@ public class App extends Application {
         showLoginScreen(); 
     } 
  
-    private void initializeData() { 
-        try { 
-            students.add(new Student("2415008", "Adylia", "Sofia", "012-3456789")); 
-            students.add(new Student("2419004", "Adam", "Hafiz", "019-8765432")); 
- 
-            courses.add(new Course("CSC101", "Introduction to Programming", 3)); 
-            courses.add(new Course("MTH201", "Calculus I", 4)); 
-            courses.add(new Course("PHY100", "Physics Fundamentals", 3)); 
- 
-            lect.add(new Lecturer("10567", "Dr. Dini", "Oktarina", "0198765432")); 
-            lect.add(new Lecturer("10000", "Dr. Wahab", "Ahmad", "014823923")); 
-        } catch (Exception e) { 
-            System.err.println("Error initializing data: " + e.getMessage()); 
-        } 
+private void initializeData() { 
+    try {
+        // --- Students ---
+        // Load existing students from file
+        List<Student> loadedStudents = FileHandler.loadStudentsFromFile("students.csv");
+        // If file was empty, add default students
+        if (loadedStudents.isEmpty()) {
+            loadedStudents.add(new Student("2415008", "Adylia", "Sofia", "012-3456789")); 
+            loadedStudents.add(new Student("2419004", "Adam", "Hafiz", "019-8765432"));
+        }
+        // Update the global 'students' list
+        this.students.clear();
+        this.students.addAll(loadedStudents);
+        // Save updated list to file
+        FileHandler.saveStudentsToFile(loadedStudents, "students.csv");
+        // Display all students
+        for (Student s : loadedStudents) {
+            s.displayInfo();
+        }
+        
+        // --- Courses ---
+        List<Course> loadedCourses = FileHandler.loadCoursesFromFile("courses.csv");
+        if (loadedCourses.isEmpty()) {
+            loadedCourses.add(new Course("CSC101", "Introduction to Programming", 3)); 
+            loadedCourses.add(new Course("MTH201", "Calculus I", 4)); 
+            loadedCourses.add(new Course("PHY100", "Physics Fundamentals", 3)); 
+        }
+        this.courses.clear();
+        this.courses.addAll(loadedCourses);
+        FileHandler.saveCoursesToFile(loadedCourses, "courses.csv");
+        for (Course c : loadedCourses) {
+            c.displayInfo();
+        }
+        
+        // --- Lecturers ---
+        List<Lecturer> loadedLecturers = FileHandler.loadLecturersFromFile("lecturers.csv");
+        if (loadedLecturers.isEmpty()) {
+            loadedLecturers.add(new Lecturer("10567", "Dr. Dini", "Oktarina", "0198765432")); 
+            loadedLecturers.add(new Lecturer("10000", "Dr. Wahab", "Ahmad", "014823923")); 
+        }
+        this.lect.clear();
+        this.lect.addAll(loadedLecturers);
+        FileHandler.saveLecturersToFile(loadedLecturers, "lecturers.csv");
+        for (Lecturer l : loadedLecturers) {
+            l.displayInfo();
+        }
+        
+    } catch (Exception e) { 
+        System.err.println("Error initializing data: " + e.getMessage()); 
     } 
+}
+
+ 
  
     private void showLoginScreen() { 
         VBox loginBox = new VBox(15); 
@@ -234,120 +272,152 @@ public class App extends Application {
         phoneField.setPromptText("Phone Number"); 
         output.setEditable(false); 
  
-        addBtn.setOnAction(e -> { 
-            try { 
-                String id = studIdField.getText(); 
-                String first = firstNameField.getText(); 
-                String last = lastNameField.getText(); 
-                String phone = phoneField.getText(); 
- 
-                if (id.isEmpty() || first.isEmpty() || last.isEmpty()) { 
-                    output.setText("Please fill all required fields (Student ID, First Name, Last Name)."); 
-                } else { 
-                    Student s = new Student(id, first, last, phone); 
-                    students.add(s); 
-                    output.setText("Student added:\n" + first + " " + last + " (" + id + ")"); 
-                    studIdField.clear(); 
-                    firstNameField.clear(); 
-                    lastNameField.clear(); 
-                    phoneField.clear(); 
-                } 
-            } catch (Exception ex) { 
-                output.setText("Error adding student: " + ex.getMessage()); 
-            } 
-        }); 
+addBtn.setOnAction(e -> { 
+    try { 
+        String id = studIdField.getText(); 
+        String first = firstNameField.getText(); 
+        String last = lastNameField.getText(); 
+        String phone = phoneField.getText(); 
+
+        if (id.isEmpty() || first.isEmpty() || last.isEmpty()) { 
+            output.setText("Please fill all required fields (Student ID, First Name, Last Name)."); 
+        } else { 
+            // 1. Load current student list from file
+            List<Student> students = FileHandler.loadStudentsFromFile("students.csv");
+
+            // 2. Add new student
+            Student s = new Student(id, first, last, phone); 
+            students.add(s); 
+
+            // 3. Save updated list back to file
+            FileHandler.saveStudentsToFile(students, "students.csv");
+
+            // 4. Feedback
+            output.setText("Student added:\n" + first + " " + last + " (" + id + ")"); 
+
+            // 5. Clear fields
+            studIdField.clear(); 
+            firstNameField.clear(); 
+            lastNameField.clear(); 
+            phoneField.clear(); 
+        } 
+    } catch (Exception ex) { 
+        output.setText("Error adding student: " + ex.getMessage()); 
+    } 
+}); 
  
         vbox.getChildren().addAll(studIdField, firstNameField, lastNameField, phoneField, addBtn, output); 
         return vbox; 
     } 
  
-    private VBox lectTabUI() { 
-        VBox vbox = new VBox(10); 
-        vbox.setStyle("-fx-padding: 10;"); 
- 
-        TextField lectIdField = new TextField(); 
-        TextField firstNameField = new TextField(); 
-        TextField lastNameField = new TextField(); 
-        TextField phoneField = new TextField(); 
-        TextArea output = new TextArea(); 
-        Button addBtn = new Button("Add Lecturer"); 
- 
-        lectIdField.setPromptText("Lecturer ID"); 
-        firstNameField.setPromptText("First Name"); 
-        lastNameField.setPromptText("Last Name"); 
-        phoneField.setPromptText("Phone Number"); 
-        output.setEditable(false); 
- 
-        addBtn.setOnAction(e -> { 
-            try { 
-                String id = lectIdField.getText(); 
-                String first = firstNameField.getText(); 
-                String last = lastNameField.getText(); 
-                String phone = phoneField.getText(); 
- 
-                if (id.isEmpty() || first.isEmpty() || last.isEmpty()) { 
-                    output.setText("Please fill all required fields (Lecturer ID, First Name, Last Name)."); 
-                } else { 
-                    Lecturer l = new Lecturer(id, first, last, phone); 
-                    lect.add(l); 
-                    output.setText("Lecturer added:\n" + first + " " + last + " (" + id + ")"); 
-                    lectIdField.clear(); 
-                    firstNameField.clear(); 
-                    lastNameField.clear(); 
-                    phoneField.clear(); 
-                } 
-            } catch (Exception ex) { 
-                output.setText("Error adding lecturer: " + ex.getMessage()); 
+private VBox lectTabUI() { 
+    VBox vbox = new VBox(10); 
+    vbox.setStyle("-fx-padding: 10;"); 
+
+    TextField lectIdField = new TextField(); 
+    TextField firstNameField = new TextField(); 
+    TextField lastNameField = new TextField(); 
+    TextField phoneField = new TextField(); 
+    TextArea output = new TextArea(); 
+    Button addBtn = new Button("Add Lecturer"); 
+
+    lectIdField.setPromptText("Lecturer ID"); 
+    firstNameField.setPromptText("First Name"); 
+    lastNameField.setPromptText("Last Name"); 
+    phoneField.setPromptText("Phone Number"); 
+    output.setEditable(false); 
+
+    addBtn.setOnAction(e -> { 
+        try { 
+            String id = lectIdField.getText(); 
+            String first = firstNameField.getText(); 
+            String last = lastNameField.getText(); 
+            String phone = phoneField.getText(); 
+
+            if (id.isEmpty() || first.isEmpty() || last.isEmpty()) { 
+                output.setText("Please fill all required fields (Lecturer ID, First Name, Last Name)."); 
+            } else { 
+                // 1. Load current lecturers from file
+                List<Lecturer> lecturers = FileHandler.loadLecturersFromFile("lecturers.csv");
+
+                // 2. Add new lecturer
+                Lecturer l = new Lecturer(id, first, last, phone); 
+                lecturers.add(l);
+
+                // 3. Save updated list
+                FileHandler.saveLecturersToFile(lecturers, "lecturers.csv");
+
+                // 4. Confirmation output
+                output.setText("Lecturer added:\n" + first + " " + last + " (" + id + ")"); 
+
+                // 5. Clear fields
+                lectIdField.clear(); 
+                firstNameField.clear(); 
+                lastNameField.clear(); 
+                phoneField.clear(); 
             } 
-        }); 
+        } catch (Exception ex) { 
+            output.setText("Error adding lecturer: " + ex.getMessage()); 
+        } 
+    }); 
+
+    vbox.getChildren().addAll(lectIdField, firstNameField, lastNameField, phoneField, addBtn, output); 
+    return vbox; 
+}
+
  
-        vbox.getChildren().addAll(lectIdField, firstNameField, lastNameField, phoneField, addBtn, output); 
-        return vbox; 
-    } 
- 
-    private VBox courseTabUI() { 
-        VBox vbox = new VBox(10); 
-        vbox.setStyle("-fx-padding: 10;"); 
- 
-        TextField courseCodeField = new TextField(); 
-        TextField courseNameField = new TextField(); 
-        TextField chrField = new TextField(); 
-        TextArea output = new TextArea(); 
-        Button addBtn = new Button("Add Course"); 
- 
-        courseCodeField.setPromptText("Course Code"); 
-        courseNameField.setPromptText("Course Name"); 
-        chrField.setPromptText("Credit Hours"); 
-        output.setEditable(false); 
- 
-        addBtn.setOnAction(e -> { 
-            try { 
-                String code = courseCodeField.getText(); 
-                String name = courseNameField.getText(); 
-                String chrText = chrField.getText(); 
- 
-                if (code.isEmpty() || name.isEmpty() || chrText.isEmpty()) { 
-                    output.setText("Please fill all required fields (Course Code, Course Name, Credit Hours)."); 
-                    return; 
-                } 
- 
-                int chr = Integer.parseInt(chrText); 
-                Course c = new Course(code, name, chr); 
-                courses.add(c); 
-                output.setText("Course added:\n" + code + " - " + name + " (" + chr + " CHR)"); 
-                courseCodeField.clear(); 
-                courseNameField.clear(); 
-                chrField.clear(); 
-            } catch (NumberFormatException ex) { 
-                output.setText("Credit Hours must be a valid integer."); 
-            } catch (Exception ex) { 
-                output.setText("Error adding course: " + ex.getMessage()); 
+private VBox courseTabUI() { 
+    VBox vbox = new VBox(10); 
+    vbox.setStyle("-fx-padding: 10;"); 
+
+    TextField courseCodeField = new TextField(); 
+    TextField courseNameField = new TextField(); 
+    TextField chrField = new TextField(); 
+    TextArea output = new TextArea(); 
+    Button addBtn = new Button("Add Course"); 
+
+    courseCodeField.setPromptText("Course Code"); 
+    courseNameField.setPromptText("Course Name"); 
+    chrField.setPromptText("Credit Hours"); 
+    output.setEditable(false); 
+
+    addBtn.setOnAction(e -> { 
+        try { 
+            String code = courseCodeField.getText(); 
+            String name = courseNameField.getText(); 
+            String chrText = chrField.getText(); 
+
+            if (code.isEmpty() || name.isEmpty() || chrText.isEmpty()) { 
+                output.setText("Please fill all required fields (Course Code, Course Name, Credit Hours)."); 
+                return; 
             } 
-        }); 
+
+            int chr = Integer.parseInt(chrText); 
+            Course c = new Course(code, name, chr);
+
+            //  Properly load, add, save
+            List<Course> courses = FileHandler.loadCoursesFromFile("courses.csv");
+            courses.add(c);
+            FileHandler.saveCoursesToFile(courses, "courses.csv");
+
+            output.setText("Course added:\n" + code + " - " + name + " (" + chr + " CHR)");
+
+            // Clear fields
+            courseCodeField.clear(); 
+            courseNameField.clear(); 
+            chrField.clear(); 
+
+        } catch (NumberFormatException ex) { 
+            output.setText("Credit Hours must be a valid integer."); 
+        } catch (Exception ex) { 
+            output.setText("Error adding course: " + ex.getMessage()); 
+        } 
+    }); 
+
+    vbox.getChildren().addAll(courseCodeField, courseNameField, chrField, addBtn, output); 
+    return vbox; 
+}
  
-        vbox.getChildren().addAll(courseCodeField, courseNameField, chrField, addBtn, output); 
-        return vbox; 
-    } 
  
     private VBox registrationTabUI() { 
         VBox vbox = new VBox(10); 
@@ -369,240 +439,280 @@ public class App extends Application {
  
         Registration[] currentReg = new Registration[1]; 
  
-        confirmBtn.setOnAction(e -> { 
-            try { 
-                String regId = regIdField.getText(); 
-                String sid = studIdField.getText(); 
-                String ccode = courseCodeField.getText(); 
-                String date = dateField.getText(); 
+confirmBtn.setOnAction(e -> {
+    try {
+        String regId = regIdField.getText();
+        String sid = studIdField.getText();
+        String ccode = courseCodeField.getText();
+        String date = dateField.getText();
+
+        if (regId.isEmpty() || sid.isEmpty() || ccode.isEmpty() || date.isEmpty()) {
+            output.setText("Please fill all required fields for registration.");
+            return;
+        }
+
+        Student foundStudent = null;
+        for (Student s : students) {
+            if (s.getStudID().equals(sid)) {
+                foundStudent = s;
+                break;
+            }
+        }
+
+        Course foundCourse = null;
+        for (Course c : courses) {
+            if (c.getCourseCode().equals(ccode)) {
+                foundCourse = c;
+                break;
+            }
+        }
+
+        if (foundStudent == null) {
+            output.setText("Error: Student with ID " + sid + " not found.");
+            return;
+        }
+        if (foundCourse == null) {
+            output.setText("Error: Course with code " + ccode + " not found.");
+            return;
+        }
+
+        String section = foundCourse.getSection();
+        if (section == null || section.isEmpty()) {
+            output.setText("Error: Course " + ccode + " does not have an assigned section yet.");
+            return;
+        }
+
+        if (foundStudent.getRegisteredCourses().stream().anyMatch(rc ->
+                rc.getCourseCode().equals(ccode) && Objects.equals(rc.getSection(), section))) {
+            output.setText("Student " + sid + " is already registered for course " + ccode +
+                    " (Section: " + section + ").");
+            return;
+        }
+
+        Course courseToRegister = new Course(foundCourse.getCourseCode(),
+                foundCourse.getCourseName(),
+                foundCourse.getCreditHours(),
+                section);
+
+        Registration reg = new Registration(regId, sid, ccode, date, section);
+        reg.confirmRegistration();
+        currentReg[0] = reg;
+        foundStudent.registerCourse(courseToRegister);
+
+        //  File I/O
+        List<Registration> regList = FileHandler.loadRegistrationsFromFile("registrations.csv");
+        regList.add(reg);
+        FileHandler.saveRegistrationsToFile(regList, "registrations.csv");
+
+        //  Display all registrations
+        StringBuilder sb = new StringBuilder("Registration confirmed:\n");
+        for (Registration r : FileHandler.loadRegistrationsFromFile("registrations.csv")) {
+            sb.append("RegID: ").append(r.getRegID())
+              .append(", Student: ").append(r.getStudID())
+              .append(", Course: ").append(r.getCourseCode())
+              .append(" (Section: ").append(r.getSection()).append(")\n");
+        }
+
+        output.setText(sb.toString());
+
+        // Clear input fields
+        regIdField.clear();
+        studIdField.clear();
+        courseCodeField.clear();
+        dateField.clear();
+
+    } catch (Exception ex) {
+        output.setText("Error during registration: " + ex.getMessage());
+    }
+}); 
  
-                if (regId.isEmpty() || sid.isEmpty() || ccode.isEmpty() || date.isEmpty()) { 
-                    output.setText("Please fill all required fields for registration."); 
-                    return; 
-                } 
+cancelBtn.setOnAction(e -> {
+    try {
+        if (currentReg[0] != null) {
+            String sid = currentReg[0].getStudID();
+            String ccode = currentReg[0].getCourseCode();
+            String section = currentReg[0].getSection();
+            String regId = currentReg[0].getRegID();
+
+            // Drop course from student
+            for (Student s : students) {
+                if (s.getStudID().equals(sid)) {
+                    if (section != null) {
+                        s.dropCourse(ccode, section);
+                    } else {
+                        s.dropCourse(ccode);
+                    }
+                    break;
+                }
+            }
+
+            currentReg[0].cancelRegistration();
+
+            // ✅ File I/O: Remove the registration from the file
+            List<Registration> regList = FileHandler.loadRegistrationsFromFile("registrations.csv");
+            regList.removeIf(r -> r.getRegID().equals(regId));
+            FileHandler.saveRegistrationsToFile(regList, "registrations.csv");
+
+            output.setText("Registration cancelled for RegID: " + regId + ".");
+            currentReg[0] = null;
+        } else {
+            output.setText("No active registration to cancel.");
+        }
+    } catch (Exception ex) {
+        output.setText("Error cancelling registration: " + ex.getMessage());
+    }
+});
  
-                Student foundStudent = null; 
-                for (Student s : students) { 
-                    if (s.getStudID().equals(sid)) { 
-                        foundStudent = s; 
-                        break; 
-                    } 
-                } 
- 
-                Course foundCourse = null; 
-                for (Course c : courses) { 
-                    if (c.getCourseCode().equals(ccode)) { 
-                        foundCourse = c; 
-                        break; 
-                    } 
-                } 
- 
-                if (foundStudent == null) { 
-                    output.setText("Error: Student with ID " + sid + " not found."); 
-                    return; 
-                } 
-                if (foundCourse == null) { 
-                    output.setText("Error: Course with code " + ccode + " not found."); 
-                    return; 
-                } 
- 
-                // Retrieve the section directly from the foundCourse (which would have been set by assignment) 
-                String section = foundCourse.getSection(); 
- 
-                // You might want to add a check here if a course MUST have a section to be registered 
-                if (section == null || section.isEmpty()) { 
-                    output.setText("Error: Course " + ccode + " does not have an assigned section yet. Please assign a lecturer and section first."); 
-                    return; 
-                } 
- 
-                if (foundStudent.getRegisteredCourses().stream().anyMatch(rc -> 
-                    rc.getCourseCode().equals(ccode) && Objects.equals(rc.getSection(), section))) { 
-                    output.setText("Student " + sid + " is already registered for course " + ccode + " (Section: " + section + ")."); 
-                    return; 
-                } 
- 
-                Course courseToRegister = new Course(foundCourse.getCourseCode(), 
-                                                   foundCourse.getCourseName(), 
-                                                   foundCourse.getCreditHours(), 
-                                                   section); 
- 
-                Registration reg = new Registration(regId, sid, ccode, date, section); 
-                reg.confirmRegistration(); 
-                currentReg[0] = reg; 
- 
-                foundStudent.registerCourse(courseToRegister); 
- 
-                output.setText("Registration confirmed:\nRegID: " + regId + 
-                             ", Student: " + sid + 
-                             ", Course: " + ccode + 
-                             " (Section: " + section + ")"); 
-                regIdField.clear(); 
-                studIdField.clear(); 
-                courseCodeField.clear(); 
-                dateField.clear(); 
-            } catch (Exception ex) { 
-                output.setText("Error during registration: " + ex.getMessage()); 
-            } 
-        }); 
- 
-        cancelBtn.setOnAction(e -> { 
-            try { 
-                if (currentReg[0] != null) { 
-                    String sid = currentReg[0].getStudID(); 
-                    String ccode = currentReg[0].getCourseCode(); 
-                    String section = currentReg[0].getSection(); 
- 
-                    for (Student s : students) { 
-                        if (s.getStudID().equals(sid)) { 
-                            if (section != null) { 
-                                s.dropCourse(ccode, section); 
-                            } else { 
-                                s.dropCourse(ccode); 
-                            } 
-                            break; 
-                        } 
-                    } 
- 
-                    currentReg[0].cancelRegistration(); 
-                    output.setText("Registration cancelled for RegID: " + currentReg[0].getRegID() + "."); 
-                    currentReg[0] = null; 
-                } else { 
-                    output.setText("No active registration to cancel."); 
-                } 
-            } catch (Exception ex) { 
-                output.setText("Error cancelling registration: " + ex.getMessage()); 
-            } 
-        }); 
  
         vbox.getChildren().addAll(regIdField, studIdField, courseCodeField, dateField, confirmBtn, cancelBtn, output); 
         return vbox; 
     } 
  
-    private VBox assignTabUI() { 
-        VBox vbox = new VBox(10); 
-        vbox.setStyle("-fx-padding: 10;"); 
+private VBox assignTabUI() {
+    VBox vbox = new VBox(10);
+    vbox.setStyle("-fx-padding: 10;");
+
+    TextField assIdField = new TextField();
+    TextField lectIdField = new TextField();
+    TextField courseCodeField = new TextField();
+    TextField dateField = new TextField();
+    TextArea output = new TextArea();
+    Button confirmBtn = new Button("Confirm Assignment");
+    Button cancelBtn = new Button("Cancel Assignment");
+
+    assIdField.setPromptText("Assignment ID");
+    lectIdField.setPromptText("Lecturer ID");
+    courseCodeField.setPromptText("Course Code");
+    dateField.setPromptText("Assignment Date (YYYY-MM-DD)");
+    output.setEditable(false);
+
+    Assignation[] currentAss = new Assignation[1];
+    Random random = new Random();
+
+    confirmBtn.setOnAction(e -> {
+        try {
+            String assId = assIdField.getText();
+            String lid = lectIdField.getText();
+            String ccode = courseCodeField.getText();
+            String date = dateField.getText();
+
+            if (assId.isEmpty() || lid.isEmpty() || ccode.isEmpty() || date.isEmpty()) {
+                output.setText("Please fill all required fields for assignment.");
+                return;
+            }
+
+            Lecturer foundLecturer = null;
+            for (Lecturer l : lect) {
+                if (l.getLectID().equals(lid)) {
+                    foundLecturer = l;
+                    break;
+                }
+            }
+
+            Course foundCourse = null;
+            for (Course c : courses) {
+                if (c.getCourseCode().equals(ccode)) {
+                    foundCourse = c;
+                    break;
+                }
+            }
+
+            if (foundLecturer == null) {
+                output.setText("Error: Lecturer with ID " + lid + " not found.");
+                return;
+            }
+
+            if (foundCourse == null) {
+                output.setText("Error: Course with code " + ccode + " not found.");
+                return;
+            }
+
+            if (foundLecturer.getAssignedCourses().stream().anyMatch(ac ->
+                    ac.getCourseCode().equals(ccode) && ac.getSection() != null)) {
+                output.setText("Lecturer " + lid + " is already assigned to course " + ccode + " with a section.");
+                return;
+            }
+
+            String section = "S" + String.format("%02d", random.nextInt(10) + 1);
+
+            Course courseWithSection = new Course(foundCourse.getCourseCode(),
+                                                  foundCourse.getCourseName(),
+                                                  foundCourse.getCreditHours(),
+                                                  section);
+
+            Assignation ass = new Assignation(assId, lid, ccode, date, section);
+            ass.confirmAssignation();
+            currentAss[0] = ass;
+
+            foundLecturer.assignCourse(courseWithSection);
+
+            for (int i = 0; i < courses.size(); i++) {
+                if (courses.get(i).getCourseCode().equals(ccode)) {
+                    courses.set(i, courseWithSection);
+                    break;
+                }
+            }
+
+            // 🔄 FILE HANDLING: save and verify
+            List<Assignation> assList = FileHandler.loadAssignationsFromFile("assignations.csv");
+            assList.add(ass);
+            FileHandler.saveAssignationsToFile(assList, "assignations.csv");
+
+            List<Assignation> lo6 = FileHandler.loadAssignationsFromFile("assignations.csv");
+            StringBuilder sb = new StringBuilder("Assignment confirmed:\n");
+            for (Assignation a : lo6) {
+                sb.append(a.getAssID()).append(" | ")
+                  .append(a.getLectID()).append(" | ")
+                  .append(a.getCourseCode()).append(" | ")
+                  .append(a.getSection()).append(" | ")
+                  .append(a.getAssDate()).append("\n");
+            }
+            output.setText(sb.toString());
+
+            assIdField.clear();
+            lectIdField.clear();
+            courseCodeField.clear();
+            dateField.clear();
+
+        } catch (Exception ex) {
+            output.setText("Error during assignment: " + ex.getMessage());
+        }
+    });
+
+    cancelBtn.setOnAction(e -> {
+        try {
+            if (currentAss[0] != null) {
+                String lid = currentAss[0].getLectID();
+                String ccode = currentAss[0].getCourseCode();
+
+                for (Lecturer l : lect) {
+                    if (l.getLectID().equals(lid)) {
+                        List<Course> assignedCourses = l.getAssignedCourses();
+                        assignedCourses.removeIf(c -> c.getCourseCode().equals(ccode));
+                        break;
+                    }
+                }
+
+                // 🔄 FILE HANDLING: remove and update file
+                List<Assignation> assList = FileHandler.loadAssignationsFromFile("assignations.csv");
+                assList.removeIf(a -> a.getAssID().equals(currentAss[0].getAssID()));
+                FileHandler.saveAssignationsToFile(assList, "assignations.csv");
+
+                currentAss[0].cancelAssignation();
+                output.setText("Assignment cancelled for Assignment ID: " + currentAss[0].getAssID());
+                currentAss[0] = null;
+            } else {
+                output.setText("No active assignment to cancel.");
+            }
+        } catch (Exception ex) {
+            output.setText("Error cancelling assignment: " + ex.getMessage());
+        }
+    });
+
+    vbox.getChildren().addAll(assIdField, lectIdField, courseCodeField, dateField, confirmBtn, cancelBtn, output);
+    return vbox;
+}
  
-        TextField assIdField = new TextField(); 
-        TextField lectIdField = new TextField(); 
-        TextField courseCodeField = new TextField(); 
-        TextField dateField = new TextField(); 
-        TextArea output = new TextArea(); 
-        Button confirmBtn = new Button("Confirm Assignment"); 
-        Button cancelBtn = new Button("Cancel Assignment"); 
- 
-        assIdField.setPromptText("Assignment ID"); 
-        lectIdField.setPromptText("Lecturer ID"); 
-        courseCodeField.setPromptText("Course Code"); 
-        dateField.setPromptText("Assignment Date (YYYY-MM-DD)"); 
-        output.setEditable(false); 
- 
-        Assignation[] currentAss = new Assignation[1]; 
-        Random random = new Random(); 
- 
-        confirmBtn.setOnAction(e -> { 
-            try { 
-                String assId = assIdField.getText(); 
-                String lid = lectIdField.getText(); 
-                String ccode = courseCodeField.getText(); 
-                String date = dateField.getText(); 
- 
-                if (assId.isEmpty() || lid.isEmpty() || ccode.isEmpty() || date.isEmpty()) { 
-                    output.setText("Please fill all required fields for assignment."); 
-                    return; 
-                } 
- 
-                Lecturer foundLecturer = null; 
-                for (Lecturer l : lect) { 
-                    if (l.getLectID().equals(lid)) { 
-                        foundLecturer = l; 
-                        break; 
-                    } 
-                } 
- 
-                Course foundCourse = null; 
-                for (Course c : courses) { 
-                    if (c.getCourseCode().equals(ccode)) { 
-                        foundCourse = c; 
-                        break; 
-                    } 
-                } 
- 
-                if (foundLecturer == null) { 
-                    output.setText("Error: Lecturer with ID " + lid + " not found."); 
-                    return; 
-                } 
- 
-                if (foundCourse == null) { 
-                    output.setText("Error: Course with code " + ccode + " not found."); 
-                    return; 
-                } 
- 
-                if (foundLecturer.getAssignedCourses().stream().anyMatch(ac -> 
-                    ac.getCourseCode().equals(ccode) && ac.getSection() != null)) { 
-                    output.setText("Lecturer " + lid + " is already assigned to course " + ccode + " with a section."); 
-                    return; 
-                } 
- 
-                String section = "S" + String.format("%02d", random.nextInt(10) + 1); 
- 
-                Course courseWithSection = new Course(foundCourse.getCourseCode(), 
-                                                    foundCourse.getCourseName(), 
-                                                    foundCourse.getCreditHours(), 
-                                                    section); 
- 
-                Assignation ass = new Assignation(assId, lid, ccode, date, section); 
-                ass.confirmAssignation(); 
-                currentAss[0] = ass; 
- 
-                foundLecturer.assignCourse(courseWithSection); 
- 
-                for (int i = 0; i < courses.size(); i++) { 
-                    if (courses.get(i).getCourseCode().equals(ccode)) { 
-                        courses.set(i, courseWithSection); 
-                        break; 
-                    } 
-                } 
- 
-                output.setText("Assignment confirmed:\nAssignment ID: " + assId + 
-                        "\nLecturer: " + lid + "\nCourse: " + ccode + " (Section: " + section + ")" + "\nDate: " + date); 
- 
-                assIdField.clear(); 
-                lectIdField.clear(); 
-                courseCodeField.clear(); 
-                dateField.clear(); 
-            } catch (Exception ex) { 
-                output.setText("Error during assignment: " + ex.getMessage()); 
-            } 
-        }); 
- 
-        cancelBtn.setOnAction(e -> { 
-            try { 
-                if (currentAss[0] != null) { 
-                    String lid = currentAss[0].getLectID(); 
-                    String ccode = currentAss[0].getCourseCode(); 
- 
-                    for (Lecturer l : lect) { 
-                        if (l.getLectID().equals(lid)) { 
-                            List<Course> assignedCourses = l.getAssignedCourses(); 
-                            assignedCourses.removeIf(c -> c.getCourseCode().equals(ccode)); 
-                            break; 
-                        } 
-                    } 
- 
-                    currentAss[0].cancelAssignation(); 
-                    output.setText("Assignment cancelled for Assignment ID: " + currentAss[0].getAssID()); 
-                    currentAss[0] = null; 
-                } else { 
-                    output.setText("No active assignment to cancel."); 
-                } 
-            } catch (Exception ex) { 
-                output.setText("Error cancelling assignment: " + ex.getMessage()); 
-            } 
-        }); 
- 
-        vbox.getChildren().addAll(assIdField, lectIdField, courseCodeField, dateField, confirmBtn, cancelBtn, output); 
-        return vbox; 
-    } 
  
     private VBox studentRegistrationViewUI() { 
         VBox vbox = new VBox(10); 
