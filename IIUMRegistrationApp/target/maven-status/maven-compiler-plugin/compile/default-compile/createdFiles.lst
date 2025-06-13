@@ -11,3 +11,4 @@ com\mycompany\iiumregistrationapp\Course.class
 com\mycompany\iiumregistrationapp\Registration.class
 com\mycompany\iiumregistrationapp\SystemInfo.class
 com\mycompany\iiumregistrationapp\Main.class
+com\mycompany\iiumregistrationapp\FileHandler.class
